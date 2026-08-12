@@ -77,10 +77,9 @@ async function registerCommands() {
   await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
 }
 
-async function recreateChannel(channel) {
+async function recreateChannel(channel, parentId = channel.parentId) {
   const guild = channel.guild;
   const name = channel.name;
-  const parent = channel.parentId;
   const position = channel.rawPosition;
   const permissionOverwrites = channel.permissionOverwrites.cache.map((ow) => ({
     id: ow.id,
@@ -92,7 +91,7 @@ async function recreateChannel(channel) {
 
   const base = {
     type: channel.type,
-    parent: parent ?? undefined,
+    parent: parentId ?? undefined,
     position,
     permissionOverwrites,
     reason,
@@ -134,11 +133,9 @@ function findChannelByName(guild, name) {
 }
 
 async function nukeAllOnce(guild) {
-  const channels = [...guild.channels.cache.values()].sort((a, b) => {
-    const aCat = a.type === ChannelType.GuildCategory ? 1 : 0;
-    const bCat = b.type === ChannelType.GuildCategory ? 1 : 0;
-    return aCat - bCat;
-  });
+  const channels = [...guild.channels.cache.values()].filter(
+    (c) => c.type !== ChannelType.GuildCategory
+  );
 
   let done = 0;
   for (const ch of channels) {
